@@ -25,6 +25,11 @@ def main():
         x2 = box['bottomright']['x']
         y2 = box['bottomright']['y']
         cv2.rectangle(image,(x1,y1),(x2,y2),(0,255,0),3)
+        label = str(box['label']) + " " + str(int(box['confidence']*100))
+        cv2.putText(
+            image, label, (x1, y1 - 12),
+            cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, (0,255,0),
+            1)        
 
     cv2.imwrite('out.png',image)
 
