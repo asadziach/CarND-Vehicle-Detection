@@ -6,6 +6,7 @@ Created on Sep 23, 2017
 from moviepy.editor import VideoFileClip
 from darkflow.net.build import TFNet
 import cv2
+import pickle
 
 class VideoLaneProcessor(object):
     
@@ -17,6 +18,10 @@ class VideoLaneProcessor(object):
         '''
         Constructor
         '''
+        dest_pickle = pickle.load( open(camera_cal_pickle, "rb"))
+        self.mtx = dest_pickle["mtx"]
+        self.dist = dest_pickle["dist"]
+                
         #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
         options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
         
@@ -27,6 +32,7 @@ class VideoLaneProcessor(object):
     # Video processing pipeline
     def process_image(self, image):
     
+        image = cv2.undistort(image, self.mtx, self.dist, None, self.mtx)
         result = self.tfnet.return_predict(image)
         
         #print(result)
@@ -39,14 +45,14 @@ class VideoLaneProcessor(object):
             like person bicycle bus truck botorbike traffic lights etc. For this project I am
             just using car. 
             '''            
-            if label == "car" and confidence > 0.5: 
+            if (label == "car" or label == "truck") and confidence > 0.4: 
                        
                 x1 = box['topleft']['x']
                 y1 = box['topleft']['y']
                 x2 = box['bottomright']['x']
                 y2 = box['bottomright']['y']
                 cv2.rectangle(image,(x1,y1),(x2,y2),(0,255,0),3)
-                label = label + " " + str(int(confidence*100))
+                label = str(int(confidence*100))
                 cv2.putText(
                     image, label, (x1, y1 - 12),
                     cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, (0,255,0),
@@ -55,7 +61,7 @@ class VideoLaneProcessor(object):
         return image  
         
 def main():
-    videoname = 'project_video'
+    videoname = 'test_video'
     output = videoname + '_output.mp4'
     input  = videoname + '.mp4'
     
