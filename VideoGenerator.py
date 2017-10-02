@@ -17,7 +17,8 @@ class VideoLaneProcessor(object):
         '''
         Constructor
         '''
-        options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0, "batch": 32}
+        #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
+        options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
         
         self.tfnet = TFNet(options)
         self.frame_count = 0   
@@ -31,16 +32,25 @@ class VideoLaneProcessor(object):
         #print(result)
         
         for box in result:
-            x1 = box['topleft']['x']
-            y1 = box['topleft']['y']
-            x2 = box['bottomright']['x']
-            y2 = box['bottomright']['y']
-            cv2.rectangle(image,(x1,y1),(x2,y2),(0,255,0),3)
-            label = str(box['label']) + " " + str(int(box['confidence']*100))
-            cv2.putText(
-                image, label, (x1, y1 - 12),
-                cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, (0,255,0),
-                1)              
+            label = box['label']
+            confidence = box['confidence']
+            '''
+            YOLO provides multiple detectctions that might be interesting for self driving cars
+            like person bicycle bus truck botorbike traffic lights etc. For this project I am
+            just using car. 
+            '''            
+            if label == "car" and confidence > 0.5: 
+                       
+                x1 = box['topleft']['x']
+                y1 = box['topleft']['y']
+                x2 = box['bottomright']['x']
+                y2 = box['bottomright']['y']
+                cv2.rectangle(image,(x1,y1),(x2,y2),(0,255,0),3)
+                label = label + " " + str(int(confidence*100))
+                cv2.putText(
+                    image, label, (x1, y1 - 12),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, (0,255,0),
+                    1)              
     
         return image  
         
