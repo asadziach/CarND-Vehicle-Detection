@@ -15,10 +15,12 @@ class VideoPipeline(object):
     class attributes
     '''
 
-    def __init__(self, camera_cal_pickle):
+    def __init__(self, camera_cal_pickle, track_lanes=True, track_objects=True):
         '''
         Constructor
         '''
+        self.track_lanes = track_lanes
+        self.track_objects = track_objects
         dest_pickle = pickle.load( open(camera_cal_pickle, "rb"))
         self.mtx = dest_pickle["mtx"]
         self.dist = dest_pickle["dist"]
@@ -31,21 +33,25 @@ class VideoPipeline(object):
     
         image = cv2.undistort(image, self.mtx, self.dist, None, self.mtx)
         
-        lane_info = self.lane_detector.process_frame(image)
-        boxes = self.car_detector.process_frame(image)
-        
-        self.car_detector.draw_boxes(image,boxes)
-        image = self.lane_detector.draw_lane_lines(image, lane_info)
+        if self.track_lanes:
+            lane_info = self.lane_detector.process_frame(image)
+            
+        if self.track_objects:
+            self.car_detector.process_frame(image)
+            self.car_detector.draw_boxes(image)
+            
+        if self.track_lanes and lane_info != None:
+                image = self.lane_detector.draw_lane_lines(image, lane_info)
         
         return image  
         
 def main():
-    videoname = 'test_video'
+    videoname = 'project_video'
     output = videoname + '_output.mp4'
     input  = videoname + '.mp4'
     
-    clip = VideoFileClip(input)
-    processor = VideoPipeline("camera_cal/wide_dist_pickle.p")
+    clip = VideoFileClip(input).subclip(18,19)
+    processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=False)
     video_clip = clip.fl_image(processor.process_image)
     video_clip.write_videofile(output, audio=False)
     
