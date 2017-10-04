@@ -77,7 +77,7 @@ class ClassicLaneDetector(object):
             #bad frame
             if self.frame_count == 0:
                 # Don't do anything if frist frame is bad
-                return image
+                return None
             lanes = self.recent_lanes[-1]
             curve_radii = self.recent_curve_radii[-1]
             self.bad_frame_count += 1         
@@ -103,6 +103,7 @@ class ClassicLaneDetector(object):
         return (camera_center, curve_radii, m_inv, lanes)  
     
     def draw_lane_lines(self, image, lane_info):
+        
         camera_center, curve_radii, m_inv, lanes = lane_info  
         result, _ = draw_lane_lines(image, m_inv, lanes, colors=([0,255,0],[0,255,0]))              
         annotate_results(result, camera_center, ClassicLaneDetector.dpm, curve_radii)
