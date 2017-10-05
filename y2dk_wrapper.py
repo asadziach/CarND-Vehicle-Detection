@@ -112,12 +112,19 @@ class Y2dk(object):
         boxesInfo = list()
         for box,score,label in zip(out_boxes, out_scores, out_classes):
             top, left, bottom, right = box
+            #scale the boxes
             h_scale = input_image.shape[0]/self.model_image_size[0]
             w_scale = input_image.shape[1]/self.model_image_size[1] 
             top = int(top * h_scale)
             bottom = int(bottom * h_scale)
             left = int(left * w_scale)
-            right = int(right * w_scale)            
+            right = int(right * w_scale)
+            #clip the boxes
+            top = max(0, np.floor(top + 0.5).astype('int32'))
+            left = max(0, np.floor(left + 0.5).astype('int32'))
+            bottom = min(input_image.shape[0], np.floor(bottom + 0.5).astype('int32'))
+            right = min(input_image.shape[1], np.floor(right + 0.5).astype('int32'))
+        
             boxesInfo.append({
                 "label": self.class_names[label],
                 "confidence": score,
