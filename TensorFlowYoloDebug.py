@@ -13,10 +13,11 @@ YOLO provides multiple detectctions that might be interesting for self driving c
 like person bicycle bus truck botorbike traffic lights, pedestrian etc. 
 '''     
 def is_interesting(label):
+    return True
     if (
         label == "car" or label == "truck" or
         label == "bicycle" or label == "bus" or
-        label == "botorbike" or label == "person"
+        label == "motorbike" or label == "person"
         ):
         return True
     
@@ -49,12 +50,18 @@ def main():
             confidence = box['confidence']
    
             if is_interesting(label):
-                if confidence > .1:              
-                    cv2.rectangle(image,(x1,y1),(x2,y2),(0,255,0),3)
-                    label = str(int(confidence*100))
+                if confidence > .45:
+                    color = (0,255,0)
+                    if label == "car":
+                        color = (255,128,128)
+                    elif label == "bus":
+                        color = (255,0,255)
+                                         
+                    cv2.rectangle(image,(x1,y1),(x2,y2),color,2)
+                    label = label + " " + str(int(confidence*100)) 
                     cv2.putText(
                         image, label, (x1, y1 - 12),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, (0,255,0),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, color,
                         1)        
             
         cv2.imwrite('./output_images/out' + str(idx) + '.jpg',image)  

@@ -31,13 +31,13 @@ class TensorFlowYoloTracker(object):
      
     '''
     YOLO provides multiple detectctions that might be interesting for self driving cars
-    like person bicycle bus truck botorbike traffic lights, pedestrian etc. 
+    like person bicycle bus truck motorbike traffic lights, pedestrian etc. 
     '''     
     def is_interesting(self, label):
         if (
             label == "car" or label == "truck" or
             label == "bicycle" or label == "bus" or
-            label == "botorbike" or label == "person"
+            label == "motorbike" or label == "person"
             ):
             return True
         
@@ -122,7 +122,7 @@ class TensorFlowYoloTracker(object):
                     obj.bbox = box
                     obj.last_seen = self.frame_count
                     found = True
-                    
+            #Optical tracker will never provide new objects        
             if len(info) != 0:
                 if not found:
                     #New obj
