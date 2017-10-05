@@ -2,7 +2,6 @@
 """Run a YOLO_v2 style detection model on test images."""
 import cv2
 import colorsys
-import imghdr
 import glob
 import os
 import random
@@ -10,7 +9,6 @@ import random
 import numpy as np
 from keras import backend as K
 from keras.models import load_model
-from PIL import Image, ImageDraw, ImageFont
 
 from yad2k.models.keras_yolo import yolo_eval, yolo_head
 
@@ -80,7 +78,7 @@ class Y2dk(object):
         self.class_names = class_names 
         self.colors = colors 
     
-    def predict(self, image_data, image_width, image_height):
+    def predict(self, image_data):
     
         boxes, scores, classes, yolo_model, input_image_shape = self.yolo_state 
     
@@ -93,7 +91,7 @@ class Y2dk(object):
             [boxes, scores, classes],
             feed_dict={
                 yolo_model.input: image_data,
-                input_image_shape: [image_width, image_height],
+                input_image_shape: [self.model_image_size[1], self.model_image_size[0]],
                 K.learning_phase(): 0
             })
         #print('Found {} boxes for {}'.format(len(out_boxes), image_file))
@@ -102,12 +100,20 @@ class Y2dk(object):
         
         return out_boxes, out_scores, out_classes
 
-    def return_predict(self, out_boxes, out_scores, out_classes, image_width, image_height):
+    def return_predict(self, input_image):
+        
+        image = np.copy(input_image)
+        image = cv2.resize(image, self.model_image_size)
+        image = image / 255.
+        image = image[:,:,::-1]
+        
+        out_boxes, out_scores, out_classes = self.predict(image)
+            
         boxesInfo = list()
         for box,score,label in zip(out_boxes, out_scores, out_classes):
             top, left, bottom, right = box
-            h_scale = image_height/608.
-            w_scale = image_width/608. 
+            h_scale = input_image.shape[0]/self.model_image_size[0]
+            w_scale = input_image.shape[1]/self.model_image_size[1] 
             top = int(top * h_scale)
             bottom = int(bottom * h_scale)
             left = int(left * w_scale)
@@ -123,51 +129,6 @@ class Y2dk(object):
                     "x": right}
             })
         return boxesInfo    
-        
-    def draw(self, image, results):
-        
-        out_boxes, out_scores, out_classes = results
-        
-        font = ImageFont.truetype(
-            font='font/FiraMono-Medium.otf',
-            size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
-        thickness = (image.size[0] + image.size[1]) // 300
-    
-        for i, c in reversed(list(enumerate(out_classes))):
-            predicted_class = self.class_names[c]
-            box = out_boxes[i]
-            score = out_scores[i]
-    
-            label = '{} {:.2f}'.format(predicted_class, score)
-    
-            draw = ImageDraw.Draw(image)
-            label_size = draw.textsize(label, font)
-    
-            top, left, bottom, right = box
-            top = max(0, np.floor(top + 0.5).astype('int32'))
-            left = max(0, np.floor(left + 0.5).astype('int32'))
-            bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
-            right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-            print(label, (left, top), (right, bottom))
-    
-            if top - label_size[1] >= 0:
-                text_origin = np.array([left, top - label_size[1]])
-            else:
-                text_origin = np.array([left, top + 1])
-    
-            # My kingdom for a good redistributable image drawing library.
-            for i in range(thickness):
-                draw.rectangle(
-                    [left + i, top + i, right - i, bottom - i],
-                    outline=self.colors[c])
-            draw.rectangle(
-                [tuple(text_origin), tuple(text_origin + label_size)],
-                fill=self.colors[c])
-            draw.text(text_origin, label, fill=(0, 0, 0), font=font)
-            del draw
-            
-    def get_image_size(self):
-        return self.model_image_size
     
 '''
 YOLO provides multiple detectctions that might be interesting for self driving cars
@@ -192,22 +153,19 @@ def resize_input(im):
     return imsz
     
 def main():
-    
     options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
     model = Y2dk(options)
     
     images = glob.glob( './images/*.jpg' )
     
     for idx, fname in enumerate(images):
+        print(fname)
         in_image = cv2.imread(fname)
 
-        image = resize_input(np.copy(in_image))
-        out_boxes, out_scores, out_classes = model.predict(image, image.shape[1], image.shape[0])
-        boxes = model.return_predict(out_boxes, out_scores, out_classes,in_image.shape[1], in_image.shape[0])
+        boxes = model.return_predict(in_image)
         
         #in_image = cv2.resize(in_image, (608, 608))       
         for box in boxes:
-            print (box)
             x1 = box['topleft']['x']
             y1 = box['topleft']['y']
             x2 = box['bottomright']['x']
@@ -237,51 +195,6 @@ def main():
         cv2.imwrite('./images/out/' + str(idx) + '.jpg',in_image)  
                        
 if __name__ == '__main__':
-
     main()
-    '''
-    options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
-    
-    model = Y2dk(options)
-        
-    output_path = os.path.expanduser("images/out")
-    
-    if not os.path.exists(output_path):
-        print('Creating output path {}'.format(output_path))
-        os.mkdir(output_path)
-            
-    is_fixed_size = model.get_image_size() != (None, None)
-        
-    test_path = os.path.expanduser("images")
-     
-    for image_file in os.listdir(test_path):
-        print(image_file)
-        try:
-            image_type = imghdr.what(os.path.join(test_path, image_file))
-            if not image_type:
-                continue
-        except IsADirectoryError:
-            continue
 
-        image = Image.open(os.path.join(test_path, image_file))
-        if is_fixed_size:  # TODO: When resizing we can use minibatch input.
-            resized_image = image.resize(
-                tuple(reversed(model.get_image_size())), Image.BICUBIC)
-            image_data = np.array(resized_image, dtype='float32')
-        else:
-            # Due to skip connection + max pooling in YOLO_v2, inputs must have
-            # width and height as multiples of 32.
-            new_image_size = (image.width - (image.width % 32),
-                              image.height - (image.height % 32))
-            resized_image = image.resize(new_image_size, Image.BICUBIC)
-            image_data = np.array(resized_image, dtype='float32')
-            #print(image_data.shape)
-        image_data /= 255.
-        out_boxes, out_scores, out_classes = model.predict(image_data)
-        #model.draw(image, results)
-        boxes = model.return_predict(out_boxes, out_scores, out_classes)
-        model.draw_boxes(image_data,boxes)
-        #image.save(os.path.join("images/out", image_file), quality=90)
-        cv2.imwrite('./images/out/' + image_file + '.jpg',image_data)  
-      '''
 
