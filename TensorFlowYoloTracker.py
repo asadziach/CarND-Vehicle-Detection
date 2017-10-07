@@ -3,7 +3,8 @@ Created on Sep 23, 2017
 
 @author: asad
 '''
-from darkflow.net.build import TFNet
+#from darkflow.net.build import TFNet
+from y2dk_wrapper import Y2dk
 import cv2
 
 class TensorFlowYoloTracker(object):
@@ -22,9 +23,9 @@ class TensorFlowYoloTracker(object):
         Constructor
         '''
         #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
-        options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
-        
-        self.tfnet = TFNet(options)
+        #options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
+        options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
+        self.tfnet = Y2dk(options)
         self.frame_count = 0 
         self.tracker = cv2.MultiTracker_create()
         self.objects = []

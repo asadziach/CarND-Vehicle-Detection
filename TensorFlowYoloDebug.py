@@ -4,7 +4,7 @@ Created on Oct 1, 2017
 @author: Asad Zia
 '''
 
-from darkflow.net.build import TFNet
+from y2dk_wrapper import Y2dk
 import cv2
 import glob
 import pickle
@@ -29,8 +29,9 @@ def main():
     mtx = dest_pickle["mtx"]
     dist = dest_pickle["dist"]
         
-    options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
-    tfnet = TFNet(options)
+    #options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
+    options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
+    tfnet = Y2dk(options)
     
     images = glob.glob( './test_images/test*.jpg' )
     
