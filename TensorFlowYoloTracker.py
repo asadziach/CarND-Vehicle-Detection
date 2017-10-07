@@ -129,26 +129,14 @@ class TensorFlowYoloTracker(object):
         
     def update_objects(self, boxes, info):
         self.object_candidates = []
+        self.objects = []
         
-        found = False
         for i, box in enumerate(boxes):
             interArea = (box[2] + 1) * (box[3] + 1)
             #Small high velocity targets tend to be unrilable
             if interArea > TensorFlowYoloTracker.drawing_threshold:
-                for obj in self.objects:
-                    # Check intersection
-                    iou = self.calculate_iou(box, obj.bbox)
-                    if iou > TensorFlowYoloTracker.min_tracking_iou:
-                        #Its existing tracked obj
-                        obj.bbox = box
-                        obj.last_seen = self.frame_count
-                        found = True
-                #Optical tracker will never provide new objects        
-                if len(info) != 0:
-                    if not found:
-                        #New obj
-                        obj = tracked_object(box,info[i][0],info[i][1],self.frame_count)
-                        self.objects.append(obj)
+                obj = tracked_object(box,info[i][0],info[i][1],self.frame_count)
+                self.objects.append(obj)
             #Filter for apposite side of road
             #TODO value comes fromm lane detector
             elif box[0] < 500:
