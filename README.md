@@ -1,37 +1,95 @@
-# Vehicle Detection
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+**Vehicle Detection Project**
+
+Udacity designed the project for using classic Computer Vision techniques, namely HOG features and SVM classifier. However they allowed the flexiblity to use any machine learning or deep learning apparoch to detect vehicals. 
+
+In my prioir hobby projects, I've evaluated both HOG/SVM and Tensorflow/Yolo. I've come to the conclusion that, if you have a GPU availalbe, then Yolo runs faster than SVM and provides detection of 80 different classes (10 of which are of interest in automotive). A properly traiend HOG/SVM can match or maybe exceed the accuracy of a deep learning approach but it only does that for a single class of objects! On the road, a self driving car, would encounter many unforeseen scenarios. For example if you trained your HOG/SVM on only cars, then what will happen if it encounters atypical vehicle class, like the ones used in construction and agriculture? HOG/SVM has its place when you dont have lot of training data or scope of your search is constrained. 
+
+A Deep Learning approach can cope better with wide range of objects encountered on the road. As compared to a carefully hand crafted HOG/SVM. 
+
+[//]: # (Image References)
+[image1]: ./output_images/out2.jpg
+[image2]: ./output_images/out5.jpg
+[image3]: ./output_images/out8.jpg
+[image4]: ./examples/sliding_window.jpg
+[image5]: ./examples/bboxes_and_heat.png
+[image6]: ./examples/labels_map.png
+[image7]: ./examples/output_bboxes.png
+[video1]: ./project_video.mp4
+
+#### Test Run
+
+The follwing image is result of my Tensorflow/Yolo pipleline. Please notice it detects pedestrians, traffic lights in addition to cars. If I use a differnt model, VOC vs COCO, I get bus detected but lose traffic lights.
+
+![alt text][image1]
+![alt text][image2]
+![alt text][image3]
+
+### Model Details
+#### Architecture
+
+| Layer description                | Output size|
+|:---------------------------------|:--------------|
+| input                            | (608, 608, 3)|
+| conv 3x3p1_1                     | (608, 608, 32)|
+| maxp 2x2p0_2                     | (304, 304, 32)|
+| conv 3x3p1_1                     | (304, 304, 64)|
+| maxp 2x2p0_2                     | (152, 152, 64)|
+| conv 3x3p1_1                     | (152, 152, 128)|
+| conv 1x1p0_1                     | (152, 152, 64)|
+| conv 3x3p1_1                     | (152, 152, 128)|
+| maxp 2x2p0_2                     | (76, 76, 128)|
+| conv 3x3p1_1                     | (76, 76, 256)|
+| conv 1x1p0_1                     | (76, 76, 128)|
+| conv 3x3p1_1                     | (76, 76, 256)|
+| maxp 2x2p0_2                     | (38, 38, 256)|
+| conv 3x3p1_1                     | (38, 38, 512)|
+| conv 1x1p0_1                     | (38, 38, 256)|
+| conv 3x3p1_1                     | (38, 38, 512)|
+| conv 1x1p0_1                     | (38, 38, 256)|
+| conv 3x3p1_1                     | (38, 38, 512)|
+| maxp 2x2p0_2                     | (19, 19, 512)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| conv 1x1p0_1                     | (19, 19, 512)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| conv 1x1p0_1                     | (19, 19, 512)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| concat [16]                      | (38, 38, 512)|
+| conv 1x1p0_1                     | (38, 38, 64)|
+| local flatten 2x2                | (19, 19, 256)|
+| concat [27, 24]                  | (19, 19, 1280)|
+| conv 3x3p1_1                     | (19, 19, 1024)|
+| conv 1x1p0_1                     | (19, 19, 425)|
+
+Leaky ReLU follows all convolution layers except the last one which is "linear".
+
+#### Implementation
+I've used two differnt implenetation of YOLO with TensorFlow https://github.com/thtrieu/darkflow and https://github.com/allanzelener/YAD2K. I've built abstraction that both can be used interchangeably. I wanted to evualute accuracy vs speed. Both were compareable.
 
 
-In this project, your goal is to write a software pipeline to detect vehicles in a video (start with the test_video.mp4 and later implement on full project_video.mp4), but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
 
-Creating a great writeup:
+
+### Video Implementation
+
+Here's a [link to my video result](./project_video_output.mp4)
+
+#### Pipeline
+The first thing I do is to compute the camera calibration and distortion coefficients using the cv2.calibrateCamera() function. I applied this distortion correction to the test image using the cv2.undistort() function and obtained this result. I've observed that undistored images worke better with YOLO and I was able to detect smaller objects, like cars on the opposite lane!
+
+I feed the undistored image to a Lane finder that I implemented earlier using Classic Computer Vision techniques of color transforms, and gradient thresholding. It identifies lane curvature and vehicle displacement and is robust against environmental challenges such as shadows and pavement changes.
+
+Finally output is annotated by both the Lane Finder and Yolo tracker.
+
 ---
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+### Discussion
 
-You can submit your writeup in markdown or use another method and submit a pdf instead.
+####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-The Project
----
+Camera distortion seems to affect Tensorflow/Yolo detection. It sometimes confuses car and truck which is not too terrible. Deep learning approach works great if you have lot of data to train it or you can reuse pre-trained network with transfer learning. It does require GPU in order to run in realtime. 
 
-The goals / steps of this project are the following:
+SVM/HOG also works well but the detection scope is limited to the class you trined it for.  On the road, a self driving car, would encounter many unforeseen scenarios. For example if you trained your HOG/SVM on only cars, then it may fail if it encounters atypical vehicle class, like the ones used in construction and agriculture.
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
-
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
-
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
-
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
-
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+SVM with sliding window does not run realtime on modern CPUs. However if you have FPGA option available on your hardware platform then acceleration is possible. Both training and accelration of HOG/SVM requires more upfront engineering effort. 
 
