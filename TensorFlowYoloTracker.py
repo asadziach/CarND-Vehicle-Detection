@@ -3,7 +3,7 @@ Created on Sep 23, 2017
 
 @author: asad
 '''
-#from darkflow.net.build import TFNet
+from darkflow.net.build import TFNet
 from y2dk_wrapper import Y2dk
 import cv2
 
@@ -15,20 +15,23 @@ class TensorFlowYoloTracker(object):
     keyframe_interval = 3
     min_confidence = 0.4
     box_color = (255,128,128)
+    line_color = (255,255,0)
     min_tracking_iou = 0.4
     remember_threshold = 10 #frames
+    drawing_threshold = 5000 # pxels
 
     def __init__(self):
         '''
         Constructor
         '''
         #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
-        #options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
-        options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
-        self.tfnet = Y2dk(options)
+        options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
+        #options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
+        self.tfnet = TFNet(options)
         self.frame_count = 0 
         self.tracker = cv2.MultiTracker_create()
         self.objects = []
+        self.object_candidates = []
      
     '''
     YOLO provides multiple detectctions that might be interesting for self driving cars
@@ -38,7 +41,8 @@ class TensorFlowYoloTracker(object):
         if (
             label == "car" or label == "truck" or
             label == "bicycle" or label == "bus" or
-            label == "motorbike" or label == "person"
+            label == "motorbike" or label == "train" or
+            label == "traffic light"
             ):
             return True
         
@@ -51,25 +55,24 @@ class TensorFlowYoloTracker(object):
         
         bboxs = []
         info = [] 
-        if self.frame_count % TensorFlowYoloTracker.keyframe_interval == 0:                      
-            self.tracker = cv2.MultiTracker_create()
-            for box in result:
-                label = box['label']
-                confidence = box['confidence']
-       
-                if self.is_interesting(label):
-                    if confidence > TensorFlowYoloTracker.min_confidence:                            
-                        x1 = box['topleft']['x']
-                        y1 = box['topleft']['y']
-                        x2 = box['bottomright']['x']
-                        y2 = box['bottomright']['y']
-                        bbox = (x1,y1,x2-x1,y2-y1)
-                        self.tracker.add(cv2.TrackerMIL_create(), image, bbox)
-                        bboxs.append(bbox)
-                        info.append(label)        
+              
+        for box in result:
+            label = box['label']
+            confidence = box['confidence']
+   
+            if self.is_interesting(label):
+                if confidence > TensorFlowYoloTracker.min_confidence:                            
+                    x1 = box['topleft']['x']
+                    y1 = box['topleft']['y']
+                    x2 = box['bottomright']['x']
+                    y2 = box['bottomright']['y']
+                    bbox = (x1,y1,x2-x1,y2-y1)
+                    self.tracker.add(cv2.TrackerTLD_create(), image, bbox)
+                    bboxs.append(bbox)
+                    info.append((label,confidence))        
                 
-        else:
-            _, bboxs = self.tracker.update(image)
+
+        #_, bboxs = self.tracker.update(image)
         
         self.update_objects(bboxs, info)
                 
@@ -80,8 +83,20 @@ class TensorFlowYoloTracker(object):
             newbox = obj.bbox
             p1 = (int(newbox[0]), int(newbox[1]))
             p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
+            
             cv2.rectangle(image, p1, p2, TensorFlowYoloTracker.box_color,3)
-    
+            cv2.putText(
+                image, obj.label, (p1[0], p1[1] - 12),
+                cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, TensorFlowYoloTracker.box_color,
+                1)
+            #unreliable detections on apposite site of road
+            #TODO comes from object tracker
+        for newbox in self.object_candidates:
+            p1 = (int(newbox[0]), int(newbox[1] + newbox[3]/2))
+            p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]/2))
+            cv2.arrowedLine(image, p2, p1, TensorFlowYoloTracker.line_color,3)
+                
+        
     #Intersection over Union (IoU) TODO namedtuple
     def calculate_iou(self, boxA, boxB):
         x1 = boxA[0]
@@ -113,22 +128,31 @@ class TensorFlowYoloTracker(object):
         return iou        
         
     def update_objects(self, boxes, info):
+        self.object_candidates = []
+        
         found = False
         for i, box in enumerate(boxes):
-            for obj in self.objects:
-                # Check intersection
-                iou = self.calculate_iou(box, obj.bbox)
-                if iou > TensorFlowYoloTracker.min_tracking_iou:
-                    #Its existing tracked obj
-                    obj.bbox = box
-                    obj.last_seen = self.frame_count
-                    found = True
-            #Optical tracker will never provide new objects        
-            if len(info) != 0:
-                if not found:
-                    #New obj
-                    obj = tracked_object(box,info[i],self.frame_count)
-                    self.objects.append(obj)
+            interArea = (box[2] + 1) * (box[3] + 1)
+            #Small high velocity targets tend to be unrilable
+            if interArea > TensorFlowYoloTracker.drawing_threshold:
+                for obj in self.objects:
+                    # Check intersection
+                    iou = self.calculate_iou(box, obj.bbox)
+                    if iou > TensorFlowYoloTracker.min_tracking_iou:
+                        #Its existing tracked obj
+                        obj.bbox = box
+                        obj.last_seen = self.frame_count
+                        found = True
+                #Optical tracker will never provide new objects        
+                if len(info) != 0:
+                    if not found:
+                        #New obj
+                        obj = tracked_object(box,info[i][0],info[i][1],self.frame_count)
+                        self.objects.append(obj)
+            #Filter for apposite side of road
+            #TODO value comes fromm lane detector
+            elif box[0] < 500:
+                self.object_candidates.append(box) 
                     
         # Delete objects have not seen for a while
         for obj in self.objects:
@@ -140,12 +164,13 @@ class tracked_object:
     '''
     class attributes
     '''
-    def __init__(self, bbox, label, last_seen):
+    def __init__(self, bbox, label, score, last_seen):
         '''
         Constructor
         '''
         self.bbox = bbox
         self.label = label
+        self.detection_score = score
         self.last_seen = last_seen
     
     #TODO add bbox setter and calc speed
