@@ -6,6 +6,7 @@ Created on Sep 23, 2017
 from moviepy.editor import VideoFileClip
 from TensorFlowYoloTracker import TensorFlowYoloTracker
 from ClassicLaneDetector import ClassicLaneDetector
+from ObjectTracker import ObjectTracker
 import cv2
 import pickle
 
@@ -27,6 +28,7 @@ class VideoPipeline(object):
         
         self.car_detector = TensorFlowYoloTracker()
         self.lane_detector = ClassicLaneDetector()
+        self.obj_tracker = ObjectTracker()
             
     # Video processing pipeline
     def process_image(self, image):
@@ -37,8 +39,9 @@ class VideoPipeline(object):
             lane_info = self.lane_detector.process_frame(image)
             
         if self.track_objects:
-            self.car_detector.process_frame(image)
-            self.car_detector.draw_boxes(image)
+            bbox, info = self.car_detector.process_frame(image)
+            self.obj_tracker.process_frame(bbox,info)
+            self.obj_tracker.draw_boxes(image)
             
         if self.track_lanes and lane_info != None:
                 image = self.lane_detector.draw_lane_lines(image, lane_info)
@@ -46,12 +49,12 @@ class VideoPipeline(object):
         return image  
         
 def main():
-    videoname = 'project_video'
+    videoname = 'test_video'
     output = videoname + '_output.mp4'
     input  = videoname + '.mp4'
     
     clip = VideoFileClip(input)#.subclip(4,7)
-    processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=True)
+    processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=False)
     video_clip = clip.fl_image(processor.process_image)
     video_clip.write_videofile(output, audio=False)
     
