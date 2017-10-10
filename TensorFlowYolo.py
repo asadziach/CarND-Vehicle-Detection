@@ -6,7 +6,7 @@ Created on Sep 23, 2017
 from darkflow.net.build import TFNet
 #from y2dk_wrapper import Y2dk
 
-class TensorFlowYoloTracker(object):
+class TensorFlowYoloDetector(object):
     
     '''
     class attributes
@@ -55,7 +55,7 @@ class TensorFlowYoloTracker(object):
             confidence = box['confidence']
    
             if self.is_interesting(label):
-                if confidence > TensorFlowYoloTracker.min_confidence:                            
+                if confidence > TensorFlowYoloDetector.min_confidence:                            
                     x1 = box['topleft']['x']
                     y1 = box['topleft']['y']
                     x2 = box['bottomright']['x']

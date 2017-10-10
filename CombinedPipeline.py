@@ -4,7 +4,7 @@ Created on Sep 23, 2017
 @author: Asad Zia
 '''
 from moviepy.editor import VideoFileClip
-from TensorFlowYoloTracker import TensorFlowYoloTracker
+from TensorFlowYolo import TensorFlowYoloDetector
 from ClassicLaneDetector import ClassicLaneDetector
 from ObjectTracker import ObjectTracker
 import cv2
@@ -27,7 +27,7 @@ class VideoPipeline(object):
         self.mtx = dest_pickle["mtx"]
         self.dist = dest_pickle["dist"]
         
-        self.car_detector = TensorFlowYoloTracker()
+        self.car_detector = TensorFlowYoloDetector()
         self.lane_detector = ClassicLaneDetector()
         self.obj_tracker = ObjectTracker()
         self.framecount = 0
