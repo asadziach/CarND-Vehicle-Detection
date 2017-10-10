@@ -40,7 +40,7 @@ class VideoPipeline(object):
             
         if self.track_objects:
             bbox, info = self.car_detector.process_frame(image)
-            self.obj_tracker.process_frame(bbox,info)
+            self.obj_tracker.process_frame(image,bbox,info)
             self.obj_tracker.draw_boxes(image)
             
         if self.track_lanes and lane_info != None:
@@ -49,11 +49,11 @@ class VideoPipeline(object):
         return image  
         
 def main():
-    videoname = 'test_video'
+    videoname = 'project_video'
     output = videoname + '_output.mp4'
     input  = videoname + '.mp4'
     
-    clip = VideoFileClip(input)#.subclip(4,7)
+    clip = VideoFileClip(input)#subclip(4,7)
     processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=False)
     video_clip = clip.fl_image(processor.process_image)
     video_clip.write_videofile(output, audio=False)
