@@ -15,7 +15,8 @@ class VideoPipeline(object):
     '''
     class attributes
     '''
-
+    key_frame = 5
+    
     def __init__(self, camera_cal_pickle, track_lanes=True, track_objects=True):
         '''
         Constructor
@@ -29,6 +30,7 @@ class VideoPipeline(object):
         self.car_detector = TensorFlowYoloTracker()
         self.lane_detector = ClassicLaneDetector()
         self.obj_tracker = ObjectTracker()
+        self.framecount = 0
             
     # Video processing pipeline
     def process_image(self, image):
@@ -39,12 +41,17 @@ class VideoPipeline(object):
             lane_info = self.lane_detector.process_frame(image)
             
         if self.track_objects:
-            bbox, info = self.car_detector.process_frame(image)
+            bbox = []
+            info = []
+            if self.framecount % VideoPipeline.key_frame == 0:
+                bbox, info = self.car_detector.process_frame(image)
             self.obj_tracker.process_frame(image,bbox,info)
             self.obj_tracker.draw_boxes(image)
             
         if self.track_lanes and lane_info != None:
                 image = self.lane_detector.draw_lane_lines(image, lane_info)
+        
+        self.framecount += 1
         
         return image  
         
@@ -53,7 +60,7 @@ def main():
     output = videoname + '_output.mp4'
     input  = videoname + '.mp4'
     
-    clip = VideoFileClip(input)#subclip(4,7)
+    clip = VideoFileClip(input)
     processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=False)
     video_clip = clip.fl_image(processor.process_image)
     video_clip.write_videofile(output, audio=False)

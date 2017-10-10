@@ -28,7 +28,7 @@ class ObjectTracker(object):
     line_color = (255,255,0)
     min_tracking_iou = 0.4
     remember_threshold = 3    # frames
-    drawing_threshold = 5000  # pxels
+    drawing_threshold = 0#5000  # pxels
     corr_threshold = 18000000
     left_lane_threshold = 500 #TODO value comes fromm lane detector
     debug = False
@@ -68,10 +68,18 @@ class ObjectTracker(object):
         pass
         
     def process_frame(self,image,bboxs,info):
-        self.update_objects(image,bboxs,info)
+        
+        #Optically track all objects and predict expected bbox
+        for obj in self.objects:
+            if not obj.predict(image):
+                #Remove object if visual tracking failed
+                self.delete_tracked_obj(obj)
+                
+        if bboxs and info:
+            self.update_objects(image,bboxs,info)
+        
         self.frame_count += 1
-        #self.tracker.add(cv2.TrackerTLD_create(), image, bbox)
-                #_, bboxs = self.tracker.update(image)
+
                 
     #Intersection over Union (IoU) TODO namedtuple
     def calculate_iou(self, boxA, boxB):
@@ -170,11 +178,7 @@ class ObjectTracker(object):
         return corr.flat[np.argmax(corr)]
         
     def update_objects(self, image, boxes, info):
-        #Optically track all objects and predict expected bbox
-        for obj in self.objects:
-            if not obj.predict(image):
-                #Remove object if visual tracking failed
-                self.delete_tracked_obj(obj)
+
         
         self.objects.sort(key=lambda x: x.area, reverse=True)
         boxes.sort(key=lambda x: (x[2] + 1) * (x[3] + 1), reverse=True)
@@ -250,13 +254,18 @@ class Vehicle:
         self.area = (bbox[2] + 1) * (bbox[3] + 1)
     
     def update_location(self,image,bbox,framecount, score):
+        self.tracker = cv2.TrackerKCF_create()
         self.tracker.init(image, bbox)
         self.bbox = bbox
         self.last_seen = framecount
         self.detection_score = score
     
     def predict(self,image):
-        ok, self.bbox = self.tracker.update(image)
+        ok, bbox = self.tracker.update(image)
+        if ok:
+            #only take the location, not size
+            #self.bbox = (bbox[0], bbox[1], self.bbox[2], self.bbox[3])
+            self.bbox = bbox
         return ok
     #TODO add bbox setter and calc speed
 if __name__ == '__main__':
