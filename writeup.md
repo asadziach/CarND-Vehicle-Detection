@@ -18,6 +18,7 @@ In my prior work, I've evaluated both HOG/SVM and YOLO for 'Detection'. I've com
 [image6]: ./examples/grid.png
 [image7]: ./examples/yolo-out.png
 [image8]: https://user-images.githubusercontent.com/10645701/30238192-b8fd9a84-9574-11e7-9792-4a6529f7894c.png
+[image9]: ./examples/pipeline.png
 [video1]: ./project_video.mp4
 
 #### Running
@@ -108,7 +109,7 @@ Wit the COCO weights, It is able to identify the 80 classes, but I restrict it t
 
 
 #### Implementation
-I've used two different implementation of YOLO with TensorFlow [darkflow](https://github.com/thtrieu/darkflow) and [YAD2K](https://github.com/allanzelener/YAD2K). I've built abstraction that both can be used interchangeably. I wanted to evaluate accuracy vs speed. In case of low GPU RAM, darkflow performs faster.
+I've used two different implementation of YOLO with TensorFlow [darkflow](https://github.com/thtrieu/darkflow) and [YAD2K](https://github.com/allanzelener/YAD2K). I've built abstraction that both can be used interchangeably. I wanted to evaluate accuracy vs speed. In case of low GPU RAM, darkflow performs faster. 
 
 Here is a rough idea of speed vs GPU requirements on NVIDIA 1080ti.[2](https://github.com/zhreshold/mxnet-yolo/issues/13)
 
@@ -123,9 +124,15 @@ Here's a [link to my video result](./project_video_output.mp4)
 #### Pipeline
 The first thing I do is to compute the camera calibration and distortion coefficients using the cv2.calibrateCamera() function. I applied this distortion correction to the test image using the cv2.undistort() function and obtained this result. I've observed that undistorted images work better with YOLO and I was able to detect smaller objects, like cars on the opposite lane!
 
-I feed the undistorted image to a Lane finder that I implemented earlier using Classic Computer Vision techniques of color transforms, and gradient thresholding. It identifies lane curvature and vehicle displacement and is robust against environmental challenges such as shadows and pavement changes.
+I feed the undistorted image to a Lane finder that I implemented earlier using Classic Computer Vision techniques of color transforms, and gradient thresholding, file 'ClassicLaneDetector.py'. It identifies lane curvature and vehicle displacement and is robust against environmental challenges such as shadows and pavement changes.
 
 Finally output is annotated by both the Lane Finder and Yolo tracker.
+
+Here is my pipleline file 'CombinedPipeline.py':
+
+![alt text][image9]
+
+I run YOLO; file 'TensorFlowYolo.py'; every 5 frames (configurable). Then I used KCF to track the vehicles between frames, file 'ObjectTracker.py'.
 
 ---
 
@@ -138,5 +145,4 @@ SVM/HOG also works well but the detection scope is limited to the class you trai
 SVM with sliding window does not run realtime on modern CPUs. However if you have FPGA option available on your hardware platform then acceleration is possible. Both training and acceleration of HOG/SVM requires more upfront engineering effort. 
 
 A challenge in self driving cars is not only consistently track an object but also calculate its speed, acceleration and direction etc. I've implemented a primitive object tracker based on KCF. This is not perfect. It struggles when field of view of camera is obstructed with another moving car. A workaround can be to perform correlation between current detections and past detections to figure out which of the bounding boxes belong to which objects. It is a bit computationally involved. A better approach would be to model the object movement with Kalman Filter. A more robust solution would combine RADAR, LIDAR detection with camera to complement weaknesses of any individual sensor.
-
 
