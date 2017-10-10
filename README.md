@@ -1,10 +1,13 @@
 **Vehicle Detection Project**
 
-Udacity designed the project for using classic Computer Vision techniques, namely HOG features and SVM classifier. However they allowed the flexiblity to use any machine learning or deep learning apparoch to detect vehicals. 
+Udacity designed this project for using classic Computer Vision techniques, namely HOG features and SVM classifier. However they allowed the flexibility to use any machine learning or deep learning approach to detect vehicles. 
 
-In my prioir hobby projects, I've evaluated both HOG/SVM and Tensorflow/Yolo. I've come to the conclusion that, if you have a GPU availalbe, then Yolo runs faster than SVM and provides detection of 80 different classes (10 of which are of interest in automotive). A properly traiend HOG/SVM can match or maybe exceed the accuracy of a deep learning approach but it only does that for a single class of objects! On the road, a self driving car, would encounter many unforeseen scenarios. For example if you trained your HOG/SVM on only cars, then what will happen if it encounters atypical vehicle class, like the ones used in construction and agriculture? HOG/SVM has its place when you dont have lot of training data or scope of your search is constrained. 
+I have tackled this problem using a hybrid Deep Learning and Machine Learning approach. I used Tensorflow/YOLO to perform vehicle 'Detection. It is followed by a Kernelized Correlation Filters(KCF) for 'Tracking' which is a discriminative online classifier that distinguishes between a target and its surrounding environment. This approach makes it fast, able to run in realtime without a GPU! 
 
-A Deep Learning approach can cope better with wide range of objects encountered on the road. As compared to a carefully hand crafted HOG/SVM. 
+Original papers: [YOLO9000](https://arxiv.org/pdf/1612.08242.pdf), [KCF]( http://www.robots.ox.ac.uk/~joao/publications/henriques_tpami2015.pdf).
+
+In my prior work, I've evaluated both HOG/SVM and YOLO for 'Detection'. I've come to the conclusion that, if you have a GPU available, then YOLO runs faster than SVM, even if you run YOLO per frame. I get decent results even if I run YOLO as little as once per second and use KCF to fill in the blanks. As an extra benefit YOLO, provides detection of 80 different classes (10 of which are of interest in automotive) with [COCO](http://cocodataset.org/) dataset. 
+ 
 
 [//]: # (Image References)
 [image1]: ./output_images/out2.jpg
@@ -24,18 +27,16 @@ Install [darkflow](https://github.com/thtrieu/darkflow) and download weights as 
 
 #### Test Run
 
-The follwing image is result of my Tensorflow/Yolo pipleline. Please notice it detects pedestrians, traffic lights in addition to cars. If I use differnt weights: VOC vs COCO, I get bus detected but lose traffic lights.
+The following image is result of my Tensorflow/Yolo pipeline. Please notice it detects pedestrians, traffic lights in addition to cars. If I use different weights: VOC vs COCO, I get bus detected but lose traffic lights.
 
 ![alt text][image1]
-Notice the cars detected on the oppisite lane!
+Notice the cars detected on the opposite lane!
 ![alt text][image2]
 ![alt text][image3]
 
 ### Model Details
 #### Architecture
-I've used YOLOv2 implemented with TensorFlow and Keras.  I've used pre-trained weights for COCO, which is a large-scale object detection, segmentation, and captioning dataset.
-
-Original paper: [YOLO9000](https://arxiv.org/pdf/1612.08242.pdf): Better, Faster, Stronger by Joseph Redmond and Ali Farhadi.
+I've used YOLOv2 implemented with TensorFlow and Keras. I've used pre-trained weights for COCO, which is a large-scale object detection, segmentation, and captioning dataset.
 
 | Layer description                | Output size|
 |:---------------------------------|:--------------|
@@ -72,7 +73,7 @@ Original paper: [YOLO9000](https://arxiv.org/pdf/1612.08242.pdf): Better, Faster
 | conv 3x3p1_1                     | (19, 19, 1024)|
 | conv 1x1p0_1                     | (19, 19, 425)|
 
-Leaky ReLU follows all convolution layers except the last one which is "linear".
+Leaky ReLU follows all convolutional layers except the last one which is "linear".
 
 I resize the input image to 608x608 as expected by YOLO in file y2dk_wrapper.py function return_predict(). Due to skip connection + max pooling in YOLO_v2, inputs must have width and height as multiples of 32.
 
@@ -107,20 +108,22 @@ Wit the COCO weights, It is able to identify the 80 classes, but I restrict it t
 
 
 #### Implementation
-I've used two differnt implenetation of YOLO with TensorFlow [darkflow](https://github.com/thtrieu/darkflow) and [YAD2K](https://github.com/allanzelener/YAD2K). I've built abstraction that both can be used interchangeably. I wanted to evualute accuracy vs speed. In case of low GPU RAM, darkflow performs faster.
+I've used two different implementation of YOLO with TensorFlow [darkflow](https://github.com/thtrieu/darkflow) and [YAD2K](https://github.com/allanzelener/YAD2K). I've built abstraction that both can be used interchangeably. I wanted to evaluate accuracy vs speed. In case of low GPU RAM, darkflow performs faster.
 
-Here is a rough idea of speed vs GPU requirements on NVIDIA 1080ti.[1](https://github.com/zhreshold/mxnet-yolo/issues/13)
+Here is a rough idea of speed vs GPU requirements on NVIDIA 1080ti.[2](https://github.com/zhreshold/mxnet-yolo/issues/13)
 
 ![alt text][image8]
 
 ### Video Implementation
 
 Here's a [link to my video result](./project_video_output.mp4)
+[![See it in action on youtube](http://img.youtube.com/vi/l0_p_eeymc8/0.jpg)](https://youtu.be/l0_p_eeymc8)
+
 
 #### Pipeline
-The first thing I do is to compute the camera calibration and distortion coefficients using the cv2.calibrateCamera() function. I applied this distortion correction to the test image using the cv2.undistort() function and obtained this result. I've observed that undistored images worke better with YOLO and I was able to detect smaller objects, like cars on the opposite lane!
+The first thing I do is to compute the camera calibration and distortion coefficients using the cv2.calibrateCamera() function. I applied this distortion correction to the test image using the cv2.undistort() function and obtained this result. I've observed that undistorted images work better with YOLO and I was able to detect smaller objects, like cars on the opposite lane!
 
-I feed the undistored image to a Lane finder that I implemented earlier using Classic Computer Vision techniques of color transforms, and gradient thresholding. It identifies lane curvature and vehicle displacement and is robust against environmental challenges such as shadows and pavement changes.
+I feed the undistorted image to a Lane finder that I implemented earlier using Classic Computer Vision techniques of color transforms, and gradient thresholding. It identifies lane curvature and vehicle displacement and is robust against environmental challenges such as shadows and pavement changes.
 
 Finally output is annotated by both the Lane Finder and Yolo tracker.
 
@@ -128,11 +131,12 @@ Finally output is annotated by both the Lane Finder and Yolo tracker.
 
 ### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+Camera distortion seems to affect YOLO detection. I was not able to detect cars on opposite lane without applying undistortion. Initially I was running YOLO every frame. It sometimes confused car with a truck. It also needed GPU to run in realtime. Then I coupled YOLO detection with KCF tracking and both problems were solved. Deep learning approach works great if you have lot of data to train it or you can reuse pre-trained network with transfer learning. It does require GPU in order to run in realtime. 
 
-Camera distortion seems to affect Tensorflow/Yolo detection. It sometimes confuses car and truck which is not too terrible. Deep learning approach works great if you have lot of data to train it or you can reuse pre-trained network with transfer learning. It does require GPU in order to run in realtime. 
+SVM/HOG also works well but the detection scope is limited to the class you trained it for. On the road, a self driving car, would encounter many unforeseen scenarios. A Deep Learning approach can cope better with wide range of objects encountered on the road, as compared to a carefully hand crafted HOG/SVM. For example if you trained your HOG/SVM on only cars, then it may fail if it encounters atypical vehicle class, like the ones used in construction and agriculture. If you want SVM to also recognize traffic signs, pedestrians, then you will need to train classifier for each individually and then combine the results. Deep learning in contrast advocates to solve the problem end-to-end. A good [writeup](https://www.analyticsvidhya.com/blog/2017/04/comparison-between-deep-learning-machine-learning/). 
 
-SVM/HOG also works well but the detection scope is limited to the class you trined it for.  On the road, a self driving car, would encounter many unforeseen scenarios. For example if you trained your HOG/SVM on only cars, then it may fail if it encounters atypical vehicle class, like the ones used in construction and agriculture.
+SVM with sliding window does not run realtime on modern CPUs. However if you have FPGA option available on your hardware platform then acceleration is possible. Both training and acceleration of HOG/SVM requires more upfront engineering effort. 
 
-SVM with sliding window does not run realtime on modern CPUs. However if you have FPGA option available on your hardware platform then acceleration is possible. Both training and accelration of HOG/SVM requires more upfront engineering effort. 
+A challenge in self driving cars is not only consistently track an object but also calculate its speed, acceleration and direction etc. I've implemented a primitive object tracker based on KCF. This is not perfect. It struggles when field of view of camera is obstructed with another moving car. A workaround can be to perform correlation between current detections and past detections to figure out which of the bounding boxes belong to which objects. It is a bit computationally involved. A better approach would be to model the object movement with Kalman Filter. A more robust solution would combine RADAR, LIDAR detection with camera to complement weaknesses of any individual sensor.
+
 
