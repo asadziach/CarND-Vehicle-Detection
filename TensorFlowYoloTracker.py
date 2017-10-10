@@ -1,11 +1,10 @@
 '''
 Created on Sep 23, 2017
 
-@author: asad
+@author: Asad Zia
 '''
 from darkflow.net.build import TFNet
 #from y2dk_wrapper import Y2dk
-import cv2
 
 class TensorFlowYoloTracker(object):
     
@@ -18,13 +17,11 @@ class TensorFlowYoloTracker(object):
         '''
         Constructor
         '''
-        #Yolo Tiny
-        #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
         #YOLO COCO
         options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
         #Y2dk YOLO COCO
         #options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
-        self.tfnet = TFNet(options) #change to Y2dk() for using Y2dk
+        self.tfnet = TFNet(options) # Change to Y2dk(options) for using Y2dk
         self.frame_count = 0 
 
         self.objects = []

@@ -1,7 +1,7 @@
 '''
 Created on Sep 18, 2017
 
-@author: asad
+@author: Asad Zia
 '''
 import numpy as np
 import cv2

@@ -30,8 +30,6 @@ def main():
     dist = dest_pickle["dist"]
         
     options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
-    #options = {"model": "cfg/tiny-yolo-voc.cfg", "load": "bin/tiny-yolo-voc.weights", "threshold": 0.1, "gpu": 1.0}
-    #options = {"model": "model_data/yolo.h5", "threshold": 0.1, "anchors_path":"model_data/yolo_anchors.txt","classes_path":"model_data/coco_classes.txt"}
     tfnet = TFNet(options)
     
     images = glob.glob( './test_images/test*.jpg' )

@@ -1,7 +1,7 @@
 '''
 Created on Sep 23, 2017
 
-@author: asad
+@author: Asad Zia
 '''
 from moviepy.editor import VideoFileClip
 from TensorFlowYoloTracker import TensorFlowYoloTracker

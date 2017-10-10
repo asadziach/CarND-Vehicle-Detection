@@ -1,7 +1,7 @@
 '''
 Created on Oct 8, 2017
 
-@author: asad
+@author: Asad Zia
 '''
 import cv2
 from scipy import signal
@@ -28,9 +28,9 @@ class ObjectTracker(object):
     line_color = (255,255,0)
     min_tracking_iou = 0.4
     remember_threshold = 3    # frames
-    drawing_threshold = 0#5000  # pxels
+    drawing_threshold = 0     # pxels (disabled)
     corr_threshold = 18000000
-    left_lane_threshold = 500 #TODO value comes fromm lane detector
+    left_lane_threshold = 500 
     debug = False
     count = 0
         
@@ -60,11 +60,9 @@ class ObjectTracker(object):
         size = len(self.colorlist)
         index = ObjectTracker.count%size
         return self.colorlist[index]
-        #return self.colorlist.pop()
     
     # Return the color to the list to be recycled
     def free_color(self, color):
-        #self.colorlist.insert(0, color)
         pass
         
     def process_frame(self,image,bboxs,info):
@@ -151,8 +149,7 @@ class ObjectTracker(object):
                 image, str(obj.label), (p1[0], p1[1] - 12),
                 cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * 600, obj.color,
                 1)
-            #unreliable detections on apposite site of road
-            #TODO comes from object tracker
+        #unreliable detections on apposite site of road
         for newbox in self.object_candidates:
             p1 = (int(newbox[0]), int(newbox[1] + newbox[3]/2))
             p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]/2))
@@ -165,13 +162,11 @@ class ObjectTracker(object):
         p2 = (int(bboxA[0] + bboxA[2]), int(bboxA[1] + bboxA[3]))
         imgA = image[p1[1]:p2[1], p1[0]:p2[0]].astype(int)
         imgA -= int(imgA.mean())
-        #imgA = imgA / 255.
         
         p1 = (int(bboxB[0]), int(bboxB[1]))
         p2 = (int(bboxB[0] + bboxB[2]), int(bboxB[1] + bboxB[3]))
         imgB = image[p1[1]:p2[1], p1[0]:p2[0]].astype(int)
         imgB -= int(imgB.mean())
-        #imgB = imgB / 255.
         
         corr = signal.correlate2d(imgA,imgB)
                 
@@ -179,7 +174,6 @@ class ObjectTracker(object):
         
     def update_objects(self, image, boxes, info):
 
-        
         self.objects.sort(key=lambda x: x.area, reverse=True)
         boxes.sort(key=lambda x: (x[2] + 1) * (x[3] + 1), reverse=True)
         
@@ -263,8 +257,6 @@ class Vehicle:
     def predict(self,image):
         ok, bbox = self.tracker.update(image)
         if ok:
-            #only take the location, not size
-            #self.bbox = (bbox[0], bbox[1], self.bbox[2], self.bbox[3])
             self.bbox = bbox
         return ok
     #TODO add bbox setter and calc speed

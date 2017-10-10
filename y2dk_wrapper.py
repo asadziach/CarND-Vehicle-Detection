@@ -1,5 +1,10 @@
-#! /usr/bin/env python
-"""Run a YOLO_v2 style detection model on test images."""
+'''
+Created on Oct 1, 2017
+
+@author: Asad Zia
+
+Adopted from https://github.com/allanzelener/YAD2K
+'''
 import cv2
 import colorsys
 import glob
