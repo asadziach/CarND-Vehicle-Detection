@@ -61,7 +61,7 @@ def main():
     input  = videoname + '.mp4'
     
     clip = VideoFileClip(input)
-    processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=False)
+    processor = VideoPipeline("camera_cal/wide_dist_pickle.p", track_lanes=True)
     video_clip = clip.fl_image(processor.process_image)
     video_clip.write_videofile(output, audio=False)
     
