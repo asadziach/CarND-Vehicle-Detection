@@ -17,6 +17,11 @@ A Deep Learning approach can cope better with wide range of objects encountered 
 [image8]: https://user-images.githubusercontent.com/10645701/30238192-b8fd9a84-9574-11e7-9792-4a6529f7894c.png
 [video1]: ./project_video.mp4
 
+#### Running
+Install [darkflow](https://github.com/thtrieu/darkflow) and download weights as per its instructions
+
+    $python CombinedPipeline.py
+
 #### Test Run
 
 The follwing image is result of my Tensorflow/Yolo pipleline. Please notice it detects pedestrians, traffic lights in addition to cars. If I use differnt weights: VOC vs COCO, I get bus detected but lose traffic lights.
