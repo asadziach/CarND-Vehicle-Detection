@@ -177,6 +177,7 @@ class ObjectTracker(object):
                 self.delete_tracked_obj(obj)
         
         self.objects.sort(key=lambda x: x.area, reverse=True)
+        boxes.sort(key=lambda x: (x[2] + 1) * (x[3] + 1), reverse=True)
         
         self.object_candidates = []
         detect_boxes = boxes[:]
