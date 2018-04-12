@@ -1,3 +1,5 @@
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_CD6F0BFAF3C051E7D75D8F09642719DD707017E279FFC8AAA1FEDFE15EFDAE86_1523564293268_car-lane.png)
+
 **Vehicle Detection Project**
 
 Udacity designed this project for using classic Computer Vision techniques, namely HOG features and SVM classifier. However they allowed the flexibility to use any machine learning or deep learning approach to detect vehicles. 
@@ -118,7 +120,7 @@ Here is a rough idea of speed vs GPU requirements on NVIDIA 1080ti.[2](https://g
 ### Video Implementation
 
 Here's a [link to my video result](./project_video_output.mp4)
-[![See it in action on youtube](http://img.youtube.com/vi/l0_p_eeymc8/0.jpg)](https://youtu.be/l0_p_eeymc8)
+[![See it in action on youtube](https://d2mxuefqeaa7sj.cloudfront.net/s_CD6F0BFAF3C051E7D75D8F09642719DD707017E279FFC8AAA1FEDFE15EFDAE86_1523564293268_car-lane.png)](https://youtu.be/l0_p_eeymc8)
 
 
 #### Pipeline
